@@ -1,6 +1,5 @@
 package com.peterson.library.api.domain.model;
 
-import java.io.ObjectInputFilter.Status;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -104,11 +103,11 @@ public class BorrowingRecord {
         this.returnDate = returnDate;
     }
 
-    public BorrowingStatus getTaskStatus() {
+    public BorrowingStatus getStatus() {
         return status;
     }
 
-    public void setTaskStatus(BorrowingStatus status) {
+    public void setStatus(BorrowingStatus status) {
         this.status = status;
     }
 
