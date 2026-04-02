@@ -2,7 +2,8 @@ package com.peterson.library.api.application.dto;
 
 import java.util.UUID;
 
-public record BookDTO( //entrada de dados 
+public record BookRequestDTO( //entrada de dados 
+    
     String title,
     String isbn,
     Integer publishedYear,

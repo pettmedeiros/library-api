@@ -1,6 +1,7 @@
 package com.peterson.library.api.application.services;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -12,6 +13,8 @@ import com.peterson.library.api.domain.model.enums.BorrowingStatus;
 import com.peterson.library.api.domain.repositories.BookRepository;
 import com.peterson.library.api.domain.repositories.BorrowingRecordRepository;
 import com.peterson.library.api.domain.repositories.MemberRepository;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class BorrowingRecordService {
@@ -27,6 +30,7 @@ public class BorrowingRecordService {
         this.memberRepository = memberRepository;
     }
     
+    @Transactional // Garante transação sem erro 
     public BorrowingRecord borrowBook (UUID bookId, UUID memberID) {
         
         Book book = bookRepository.findById(bookId)
@@ -57,6 +61,7 @@ public class BorrowingRecordService {
         return borrowingRepository.save(record);
     }
 
+    @Transactional
     public BorrowingRecord returnBook (UUID recordId){
 
         //busca o emprestimo no banco de dados
@@ -64,10 +69,10 @@ public class BorrowingRecordService {
             .orElseThrow(() -> new RuntimeException("Registro não encontrado"));
         
         if (record.getStatus() == BorrowingStatus.RETURNED) {
-            throw new RuntimeException("Livro devolvido!");
+            throw new RuntimeException("Livro já foi devolvido!");
         }
 
-        //Captura a data de entrega e atulizar o status para devolvido
+        //Captura a data de entrega e atualizar o status para devolvido
         record.setReturnDate(LocalDate.now());
         record.setStatus(BorrowingStatus.RETURNED);
 
@@ -82,5 +87,14 @@ public class BorrowingRecordService {
         return borrowingRepository.save(record);
     }
     
+    public List<BorrowingRecord> findAll() {
+        return borrowingRepository.findAll();
+    }
+
+    public BorrowingRecord findById(UUID id) {
+        return borrowingRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Registro não encontrado!"));
+    }
+
     
 }

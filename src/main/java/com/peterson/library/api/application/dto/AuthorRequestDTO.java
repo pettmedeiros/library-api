@@ -1,6 +1,5 @@
 package com.peterson.library.api.application.dto;
 
-public class AuthorDTO {
-
+public class AuthorRequestDTO {
 
 }
