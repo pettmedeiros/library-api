@@ -5,8 +5,10 @@ import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 
 @Entity
+@Table(name = "members")
 public class Member extends Person {
 
     @Column(nullable = false)

@@ -1,6 +1,5 @@
 package com.peterson.library.api.application.services;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -8,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.peterson.library.api.application.dto.BookRequestDTO;
+import com.peterson.library.api.application.dto.BookResponseDTO;
 import com.peterson.library.api.application.mapper.BookMapper;
 import com.peterson.library.api.domain.model.Author;
 import com.peterson.library.api.domain.model.Book;
@@ -17,6 +17,8 @@ import com.peterson.library.api.domain.repositories.AuthorRepository;
 import com.peterson.library.api.domain.repositories.BookRepository;
 import com.peterson.library.api.domain.repositories.BorrowingRecordRepository;
 import com.peterson.library.api.domain.repositories.PublisherRepository;
+
+import jakarta.transaction.Transactional;
 
     
 @Service
@@ -35,7 +37,8 @@ public class BookService {
         this.borrowingRecordRepository = borrowingRecordRepository;
     }
 
-    public Book create(BookRequestDTO dto){ //Método para criar o livro 
+    @Transactional
+    public BookResponseDTO create(BookRequestDTO dto){ //Método para criar o livro 
 
         //Validar se Autor existe no banco 
         Author author = authorRepository.findById(dto.authorId())
@@ -49,33 +52,41 @@ public class BookService {
         
         Book book = BookMapper.toEntity(dto, author, publisher);
 
-        //Salva em DTO de resposta para retorno da API
-        return bookRepository.save(book);
+        Book savedBook = bookRepository.save(book);
+        
+        return BookMapper.toDTO(savedBook);
 
     }
 
-        // FIND ALL (com paginação e filtro)
-    public Page<Book> findAll(Pageable pageable, UUID authorId, UUID publisherId){
+     
+    // FIND ALL (com paginação e filtro)
+    public Page<BookResponseDTO> findAll(Pageable pageable, UUID authorId, UUID publisherId){
+        Page<Book> books;
+
         if (authorId != null){
-            return bookRepository.findByAuthorId(authorId, pageable);
+            books = bookRepository.findByAuthorId(authorId, pageable);
+        } else if (publisherId != null){
+            books = bookRepository.findByPublisherId(publisherId, pageable);
+        } else {
+            books = bookRepository.findAll(pageable);
         }
 
-        if (publisherId != null){
-            return bookRepository.findByPublisherId(publisherId, pageable);
-        }
-
-        return bookRepository.findAll(pageable);
+        return books.map(BookMapper::toDTO);  
     }
 
-    public Book findById(UUID id){
-        return bookRepository.findById(id)
+
+    public BookResponseDTO findById(UUID id){
+        Book book = bookRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Livro não encontrado"));
 
+        return BookMapper.toDTO(book);   // ← Retorna DTO
     }
 
-    public Book update(UUID id, BookRequestDTO dto){
+    @Transactional
+    public BookResponseDTO update(UUID id, BookRequestDTO dto){
 
-        Book book = findById(id);
+        Book book = bookRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Livro não encontrado"));
 
         Author author = authorRepository.findById(dto.authorId())
             .orElseThrow(() -> new RuntimeException("Autor não encontrado!"));
@@ -85,26 +96,33 @@ public class BookService {
 
         BookMapper.updateEntity(book, dto, author, publisher);
 
-        return bookRepository.save(book);
+        Book updatedBook = bookRepository.save(book);
+        
+        return BookMapper.toDTO(updatedBook);   // ← Retorna DTO
+
     }
 
-    public Book updateCopies(UUID id, Integer copies){
-
-        Book book = findById(id);
+    @Transactional
+    public BookResponseDTO updateCopies(UUID id, Integer copies){
+        Book book = bookRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Livro não encontrado"));
 
         if (copies < 0 ) {
             throw new RuntimeException("Quantidade inválida");   
         }
 
         book.setAvailableCopies(copies);
-        return bookRepository.save(book);
+        Book updatedBook = bookRepository.save(book);
+        
+        return BookMapper.toDTO(updatedBook);   // ← Retorna DTO
     }
 
 
+    @Transactional
     public void removeBook(UUID id){
-        Book book = findById(id);
+        Book book = bookRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Livro não encontrado"));
 
-        // 🔥 REGRA: não pode deletar se estiver emprestado
         boolean isBorrowed = borrowingRecordRepository.existsByBookIdAndStatus(
             id, BorrowingStatus.BORROWED
         );
@@ -116,4 +134,3 @@ public class BookService {
         bookRepository.delete(book);
     }
 }
-

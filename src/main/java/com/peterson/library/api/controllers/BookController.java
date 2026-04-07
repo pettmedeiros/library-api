@@ -18,9 +18,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import com.peterson.library.api.application.dto.BookRequestDTO;
 import com.peterson.library.api.application.dto.BookResponseDTO;
-import com.peterson.library.api.application.mapper.BookMapper;
 import com.peterson.library.api.application.services.BookService;
-import com.peterson.library.api.domain.model.Book;
+
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -40,11 +39,9 @@ public class BookController {
 
     @Operation(summary = "Cadastrar um novo livro")
     @PostMapping
-    public ResponseEntity<BookResponseDTO> create (@Valid @RequestBody BookRequestDTO dto){
-
-        Book book = bookService.create(dto);
-
-        return ResponseEntity.status(201).body(BookMapper.toDTO(book));
+    public ResponseEntity<BookResponseDTO> create(@Valid @RequestBody BookRequestDTO dto) {
+        BookResponseDTO response = bookService.create(dto);
+        return ResponseEntity.status(201).body(response);   
     }
 
     @Operation(summary = "Listar livros com paginação e filtro")
@@ -55,20 +52,18 @@ public class BookController {
             Pageable pageable
     ){
 
-        Page<Book> books = bookService.findAll(pageable, authorId, publisherId);
+        Page<BookResponseDTO> books = bookService.findAll(pageable, authorId, publisherId);
 
-        return ResponseEntity.ok(
-            books.map(BookMapper::toDTO)
-        );
+        return ResponseEntity.ok(books);
 
     } 
 
     @Operation(summary = "Listar livro por Id")
     @GetMapping("/{id}")
     public ResponseEntity<BookResponseDTO> findById (@PathVariable UUID id){
-        Book book = bookService.findById(id);
+        BookResponseDTO book = bookService.findById(id);
 
-        return ResponseEntity.ok(BookMapper.toDTO(book));
+        return ResponseEntity.ok(book);
     }
 
     @Operation(summary = "Atualizar completamente um livro")
@@ -77,9 +72,9 @@ public class BookController {
             @PathVariable UUID id,
             @Valid @RequestBody BookRequestDTO dto){
         
-        Book book = bookService.update(id, dto);
+        BookResponseDTO update = bookService.update(id, dto);
         
-        return ResponseEntity.ok(BookMapper.toDTO(book));
+        return ResponseEntity.ok(update);
 
     }
 
@@ -89,9 +84,12 @@ public class BookController {
             @PathVariable UUID id,
             @RequestParam int copies){
 
-        Book book = bookService.updateCopies(id, copies);
-        
-        return ResponseEntity.ok(BookMapper.toDTO(book));
+        if (copies < 0) {
+            throw new IllegalArgumentException("Quantidade de cópias não pode ser negativa");
+        }
+
+        BookResponseDTO updated = bookService.updateCopies(id, copies);
+        return ResponseEntity.ok(updated);
     }
 
 
